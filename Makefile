@@ -2,8 +2,9 @@ GOCMD=go
 GOTEST=$(GOCMD) test -v
 GOBUILD=$(GOCMD) build
 
-LDFLAG += GOOS=linux GOARCH=amd64
-LDFLAGS = -s
+PREFLAGS += GOOS=linux GOARCH=amd64
+LDFLAGS = "-s"
+override CC := /usr/bin/gcc
 
 checker: bin
 	$(PREFLAGS) $(GOBUILD) -ldflags $(LDFLAGS) -o bin/$@ ./$@
@@ -11,7 +12,13 @@ checker: bin
 fmt:
 	find . -type f -name "*.go" | xargs -i $(GOCMD) fmt {}
 
+test:
+	go test ./checker -v
+
 bin:
 	mkdir -p $@
 
-.PHONY: fmt bin checker
+clean: bin
+	rm -rf ./bin/*
+
+.PHONY: fmt bin checker test clean
