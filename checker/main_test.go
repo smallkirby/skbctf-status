@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"go.uber.org/zap"
@@ -20,9 +20,17 @@ func TestExecute(t *testing.T) {
 
 	for _, f := range challs_dir {
 		if f.IsDir() {
-			executer := Executer{path: fmt.Sprintf("../examples/%s", f.Name()), logger: *slogger}
+			abspath, _ := filepath.Abs(filepath.Join("../examples", f.Name()))
+			executer := Executer{path: abspath, logger: *slogger}
 			result := executer.check()
 			slogger.Infof("Result: %v", result)
+			switch result {
+			case TestSuccess:
+			case TestSuccessWithoutExecution:
+				continue
+			default:
+				t.Error("Test failed.")
+			}
 		}
 	}
 }
