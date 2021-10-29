@@ -37,6 +37,7 @@ func CheckAll(logger zap.SugaredLogger, conf CheckerConfig) error {
 
 	// execute tests
 	if conf.Parallel {
+		// Parallel test execution
 		challs_wait_que := make([]Executer, len(challs))
 		challs_running_num := 0
 		ch := make(chan Challenge, len(challs))
@@ -60,17 +61,26 @@ func CheckAll(logger zap.SugaredLogger, conf CheckerConfig) error {
 		for result := range ch {
 			logger.Infof("[%s] Test finish.", result.Name)
 			challs_running_num -= 1
+			// record to DB
+			if !conf.Nodb {
+				logger.Error("not imp")
+			}
+			// end of tests
 			if challs_running_num <= 0 {
 				close(ch)
 			}
 		}
 	} else {
+		// Sequential test execution
 		for _, challdir := range challs {
 			ch := make(chan Challenge, 1)
 			executer := Executer{path: challdir, logger: logger}
 			go executer.check(ch, conf.Infofile)
 
 			chall := <-ch
+			if !conf.Nodb {
+				logger.Error("not imp")
+			}
 			logger.Infof("[%s] Test finish.", chall.Name)
 		}
 	}

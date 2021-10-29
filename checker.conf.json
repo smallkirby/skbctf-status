@@ -4,5 +4,7 @@
   "timeout": 10.0,
   "infofile": "info.json",
   "nodb": false,
-  "challs": "../examples,"
+  "challs": "../examples",
+  "db": "../example.db",
+  "dbuser": "example"
 }

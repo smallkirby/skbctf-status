@@ -13,6 +13,8 @@ type CheckerConfig struct {
 	Infofile  string  `json:"info.json"`
 	Nodb      bool    `json:"nodb"`
 	ChallsDir string  `json:"challs"`
+	Db        string  `json:"db"`
+	DbUser    string  `json:"dbuser"`
 }
 
 func read_conf(filename string) (CheckerConfig, error) {

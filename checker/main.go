@@ -18,6 +18,8 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 	infofile := flag.String("infofile", "info.json", "File name of configuration file for each challs.")
 	nodb := flag.Bool("nodb", false, "Not write to DB.")
 	challs_dir := flag.String("challs", "../examples", "Challenges directory path.")
+	db := flag.String("db", "example.db", "DB name.")
+	dbuser := flag.String("dbuser", "example", "DB User name.")
 	flag.Parse()
 
 	// create default config
@@ -33,6 +35,8 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 		conf.Timeout = *timeout
 		conf.Infofile = *infofile
 		conf.ChallsDir = *challs_dir
+		conf.Db = *db
+		conf.DbUser = *dbuser
 	}
 
 	// Overwrite with command-line options
@@ -48,6 +52,10 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 			conf.Parallel = *parallel
 		case "challs":
 			conf.ChallsDir = *challs_dir
+		case "db":
+			conf.Db = *db
+		case "dbuser":
+			conf.DbUser = *dbuser
 		case "config":
 			break
 		default:

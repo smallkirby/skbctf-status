@@ -13,7 +13,7 @@ fmt:
 	find . -type f -name "*.go" | xargs -i $(GOCMD) fmt {}
 
 test:
-	go test ./checker -v
+	go test ./checker -v -count 1
 
 bin:
 	mkdir -p $@
