@@ -50,7 +50,6 @@ func (tr TestResult) String() string {
 	}
 }
 
-// XXX must be async, callback or channel
 func (e Executer) check(res_chan chan<- TestResult) {
 	ret := TestNotExecuted
 
@@ -119,5 +118,4 @@ func (e Executer) check(res_chan chan<- TestResult) {
 	// command ends without any failure
 	e.logger.Infof("'%s' ends with status code 0.", cfg.Name)
 	res_chan <- TestSuccess
-	return
 }
