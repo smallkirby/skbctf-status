@@ -61,6 +61,8 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 		conf.Timeout = *timeout
 		conf.Infofile = *infofile
 	}
+
+	// Overwrite with command-line options
 	flag.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case "nodb":
@@ -84,7 +86,7 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 func main() {
 	logger, err := zap.NewProduction()
 	if err != nil {
-		log.Fatalf("[!] failed to init logger:\n%w", err)
+		log.Fatalf("[!] failed to init logger:\n%s", err)
 	}
 	slogger := logger.Sugar()
 
