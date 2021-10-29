@@ -20,29 +20,29 @@ func TestBlockingExecute(t *testing.T) {
 
 	for _, f := range challs_dir {
 		if f.IsDir() {
-			res := make(chan TestResult, 1)
+			res := make(chan Challenge, 1)
 			abspath, _ := filepath.Abs(filepath.Join("../examples", f.Name()))
 			executer := Executer{path: abspath, logger: *slogger}
 			executer.check(res)
-			result := <-res
-			slogger.Infof("Result: %v", result)
+			chall := <-res
+			slogger.Infof("Result: %v", chall.result)
 
 			// tests which must fail
 			if f.Name() == "chall2" {
-				if result != TestFailure {
-					t.Errorf("Test(%s) which must fail succeeded: %s", f.Name(), result)
+				if chall.result != TestFailure {
+					t.Errorf("Test(%s) which must fail succeeded: %v", f.Name(), chall)
 				} else {
 					continue
 				}
 			}
 
 			// tests which must succeed
-			switch result {
+			switch chall.result {
 			case TestSuccess:
 			case TestSuccessWithoutExecution:
 				continue
 			default:
-				t.Errorf("Test '%s' failed.", f.Name())
+				t.Errorf("Test '%s' failed.", chall.Name)
 			}
 		}
 	}

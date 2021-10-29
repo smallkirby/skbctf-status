@@ -17,10 +17,11 @@ type Executer struct {
 	logger zap.SugaredLogger
 }
 
-type Config struct {
+type Challenge struct {
 	Name            string `json:"name"`
 	Id              int    `json:"id"`
 	Default_success bool   `json:"default"`
+	result          TestResult
 }
 
 type TestResult int
@@ -50,7 +51,7 @@ func (tr TestResult) String() string {
 	}
 }
 
-func (e Executer) check(res_chan chan<- TestResult) {
+func (e Executer) check(res_chan chan<- Challenge) {
 	ret := TestNotExecuted
 
 	// read config file
@@ -58,64 +59,69 @@ func (e Executer) check(res_chan chan<- TestResult) {
 	cfg_file, err := os.Open(cfg_file_name)
 	if err != nil {
 		e.logger.Infof("info.json not found in %s.", e.path)
-		res_chan <- ret
+		res_chan <- Challenge{result: ret}
 		return
 	}
 	cfg_bytes, err := ioutil.ReadAll(cfg_file)
 	if err != nil {
 		e.logger.Infof("Failed to read from %s.", cfg_file_name)
-		res_chan <- ret
+		res_chan <- Challenge{result: ret}
 		return
 	}
 
-	var cfg Config
-	if err := json.Unmarshal(cfg_bytes, &cfg); err != nil {
+	var chall Challenge
+	if err := json.Unmarshal(cfg_bytes, &chall); err != nil {
 		e.logger.Warnf("Failed to parse %s as JSON.", cfg_file_name)
 		e.logger.Warnf("%w", err)
-		res_chan <- ret
+		res_chan <- Challenge{result: ret}
 		return
 	}
-	if cfg.Default_success {
+	if chall.Default_success {
 		ret = TestSuccessWithoutExecution
 	}
 
 	// check exploit path and Dockerfile
 	exploit_dir_name := filepath.Join(e.path, "exploit")
 	if _, err := os.Stat(exploit_dir_name); os.IsNotExist(err) {
-		e.logger.Infof("Exploit dir not found for %s.", cfg.Name)
-		res_chan <- ret
+		e.logger.Infof("Exploit dir not found for %s.", chall.Name)
+		chall.result = ret
+		res_chan <- chall
 		return
 	}
 	docker_file_name := filepath.Join(exploit_dir_name, "Dockerfile")
 	if _, err := os.Stat(docker_file_name); os.IsNotExist(err) {
-		e.logger.Infof("Dockerfile not found in exploit dir of %s.", cfg.Name)
-		res_chan <- ret
+		e.logger.Infof("Dockerfile not found in exploit dir of %s.", chall.Name)
+		chall.result = ret
+		res_chan <- chall
 		return
 	}
 
 	// execute test
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run $(docker build -qt solver_%d %s)", cfg.Id, exploit_dir_name))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run $(docker build -qt solver_%d %s)", chall.Id, exploit_dir_name))
 
 	if err = cmd.Start(); err != nil {
-		e.logger.Warnf("Failed to start test of '%s': %w", cfg.Name, err)
-		res_chan <- TestFailure
+		e.logger.Warnf("Failed to start test of '%s': %w", chall.Name, err)
+		chall.result = TestFailure
+		res_chan <- chall
 		return
 	}
-	e.logger.Infof("Test of '%s' started as pid: %d.", cfg.Name, cmd.Process.Pid)
+	e.logger.Infof("Test of '%s' started as pid: %d.", chall.Name, cmd.Process.Pid)
 
 	// wait and get exit-status
 	if err = cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 				exit_code := status.ExitStatus()
-				e.logger.Infof("Test of '%s' failed with status %d.", cfg.Name, exit_code)
-				res_chan <- TestFailure
+				e.logger.Infof("Test of '%s' failed with status %d.", chall.Name, exit_code)
+				chall.result = TestFailure
+				res_chan <- chall
 				return
 			}
 		}
 	}
 
 	// command ends without any failure
-	e.logger.Infof("'%s' ends with status code 0.", cfg.Name)
-	res_chan <- TestSuccess
+	e.logger.Infof("'%s' ends with status code 0.", chall.Name)
+	chall.result = TestSuccess
+	res_chan <- chall
 }
