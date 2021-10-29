@@ -21,4 +21,6 @@ bin:
 clean: bin
 	rm -rf ./bin/*
 
-.PHONY: fmt bin checker test clean
+all: checker
+
+.PHONY: fmt bin checker test clean all
