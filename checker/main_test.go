@@ -26,12 +26,23 @@ func TestBlockingExecute(t *testing.T) {
 			executer.check(res)
 			result := <-res
 			slogger.Infof("Result: %v", result)
+
+			// tests which must fail
+			if f.Name() == "chall2" {
+				if result != TestFailure {
+					t.Errorf("Test(%s) which must fail succeeded: %s", f.Name(), result)
+				} else {
+					continue
+				}
+			}
+
+			// tests which must succeed
 			switch result {
 			case TestSuccess:
 			case TestSuccessWithoutExecution:
 				continue
 			default:
-				t.Error("Test failed.")
+				t.Errorf("Test '%s' failed.", f.Name())
 			}
 		}
 	}
