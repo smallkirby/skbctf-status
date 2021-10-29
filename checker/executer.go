@@ -51,14 +51,14 @@ func (tr TestResult) String() string {
 	}
 }
 
-func (e Executer) check(res_chan chan<- Challenge) {
+func (e Executer) check(res_chan chan<- Challenge, infofile string) {
 	ret := TestNotExecuted
 
 	// read config file
-	cfg_file_name := filepath.Join(e.path, "info.json")
+	cfg_file_name := filepath.Join(e.path, infofile)
 	cfg_file, err := os.Open(cfg_file_name)
 	if err != nil {
-		e.logger.Infof("info.json not found in %s.", e.path)
+		e.logger.Infof("%s not found in %s.", infofile, e.path)
 		res_chan <- Challenge{result: ret}
 		return
 	}

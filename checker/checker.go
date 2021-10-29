@@ -23,7 +23,7 @@ func CheckAll(logger zap.SugaredLogger, conf CheckerConfig) error {
 				ch := make(chan Challenge, 1)
 				abspath, _ := filepath.Abs(filepath.Join(conf.ChallsDir, f.Name()))
 				executer := Executer{path: abspath, logger: logger}
-				go executer.check(ch)
+				go executer.check(ch, conf.Infofile)
 
 				chall := <-ch
 				logger.Infof("[%s] Test finish.", chall.Name)

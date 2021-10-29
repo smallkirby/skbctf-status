@@ -23,7 +23,7 @@ func TestBlockingExecute(t *testing.T) {
 			res := make(chan Challenge, 1)
 			abspath, _ := filepath.Abs(filepath.Join("../examples", f.Name()))
 			executer := Executer{path: abspath, logger: *slogger}
-			executer.check(res)
+			executer.check(res, "info.json")
 			chall := <-res
 			slogger.Infof("Result: %v", chall.result)
 
