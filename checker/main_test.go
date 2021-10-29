@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -59,7 +61,31 @@ func TestBlockingAllCheck(t *testing.T) {
 		Nodb:      true,
 		ChallsDir: "../examples",
 	}
+
+	start_time := time.Now().Unix()
 	if err := CheckAll(*slogger, conf); err != nil {
 		t.Errorf("Test failed: %v", err)
 	}
+	end_time := time.Now().Unix()
+	fmt.Printf("Total time: %v.", end_time-start_time)
+}
+
+func TestAsyncAllCheck(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	slogger := logger.Sugar()
+	conf := CheckerConfig{
+		Single:    true,
+		Parallel:  true,
+		Timeout:   10.0,
+		Infofile:  "info.json",
+		Nodb:      true,
+		ChallsDir: "../examples",
+	}
+
+	start_time := time.Now().Unix()
+	if err := CheckAll(*slogger, conf); err != nil {
+		t.Errorf("Test failed: %v", err)
+	}
+	end_time := time.Now().Unix()
+	fmt.Printf("Total time: %v.", end_time-start_time)
 }
