@@ -3,5 +3,6 @@
   "parallel": false,
   "timeout": 10.0,
   "infofile": "info.json",
-  "nodb": false
+  "nodb": false,
+  "challs": "../examples,"
 }

@@ -47,3 +47,19 @@ func TestBlockingExecute(t *testing.T) {
 		}
 	}
 }
+
+func TestBlockingAllCheck(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	slogger := logger.Sugar()
+	conf := CheckerConfig{
+		Single:    true,
+		Parallel:  false,
+		Timeout:   10.0,
+		Infofile:  "info.json",
+		Nodb:      true,
+		ChallsDir: "../examples",
+	}
+	if err := CheckAll(*slogger, conf); err != nil {
+		t.Errorf("Test failed: %v", err)
+	}
+}

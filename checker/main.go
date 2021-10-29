@@ -1,41 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 
 	"go.uber.org/zap"
 )
-
-type CheckerConfig struct {
-	Single   bool    `json:"single"`
-	Parallel bool    `json:"parallel"`
-	Timeout  float64 `json:"timeout"`
-	Infofile string  `json:"info.json"`
-	Nodb     bool    `json:"nodb"`
-}
-
-func read_conf(filename string) (CheckerConfig, error) {
-	conf_file, err := os.Open(filename)
-	if err != nil {
-		return CheckerConfig{}, err
-	}
-	conf_bytes, err := ioutil.ReadAll(conf_file)
-	if err != nil {
-		return CheckerConfig{}, err
-	}
-
-	var conf CheckerConfig
-	if err := json.Unmarshal(conf_bytes, &conf); err != nil {
-		return conf, err
-	}
-
-	return conf, nil
-}
 
 func create_conf(logger zap.SugaredLogger) CheckerConfig {
 	// commandline option overrides configuration from config file.
@@ -46,6 +17,7 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 	parallel := flag.Bool("parallel", true, "Execute solve checks in parallel.")
 	infofile := flag.String("infofile", "info.json", "File name of configuration file for each challs.")
 	nodb := flag.Bool("nodb", false, "Not write to DB.")
+	challs_dir := flag.String("challs", "../examples", "Challenges directory path.")
 	flag.Parse()
 
 	// create default config
@@ -60,6 +32,7 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 		conf.Single = *single
 		conf.Timeout = *timeout
 		conf.Infofile = *infofile
+		conf.ChallsDir = *challs_dir
 	}
 
 	// Overwrite with command-line options
@@ -73,6 +46,8 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 			conf.Single = *single
 		case "parallel":
 			conf.Parallel = *parallel
+		case "challs":
+			conf.ChallsDir = *challs_dir
 		case "config":
 			break
 		default:
