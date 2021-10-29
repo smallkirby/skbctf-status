@@ -1,0 +1,7 @@
+{
+  "single": false,
+  "parallel": false,
+  "timeout": 10.0,
+  "infofile": "info.json",
+  "nodb": false
+}
