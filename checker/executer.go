@@ -51,7 +51,7 @@ func (tr TestResult) String() string {
 }
 
 // XXX must be async, callback or channel
-func (e Executer) check() TestResult {
+func (e Executer) check(res_chan chan<- TestResult) {
 	ret := TestNotExecuted
 
 	// read config file
@@ -59,34 +59,39 @@ func (e Executer) check() TestResult {
 	cfg_file, err := os.Open(cfg_file_name)
 	if err != nil {
 		e.logger.Infof("info.json not found in %s.", e.path)
-		return ret
+		res_chan <- ret
+		return
 	}
 	cfg_bytes, err := ioutil.ReadAll(cfg_file)
 	if err != nil {
 		e.logger.Infof("Failed to read from %s.", cfg_file_name)
-		return TestNotExecuted
+		res_chan <- ret
+		return
 	}
 
 	var cfg Config
 	if err := json.Unmarshal(cfg_bytes, &cfg); err != nil {
 		e.logger.Warnf("Failed to parse %s as JSON.", cfg_file_name)
-		e.logger.Warnf("\t%w", err)
-		return ret
+		e.logger.Warnf("%w", err)
+		res_chan <- ret
+		return
 	}
 	if cfg.Default_success {
-		ret = TestSuccess
+		ret = TestSuccessWithoutExecution
 	}
 
 	// check exploit path and Dockerfile
 	exploit_dir_name := filepath.Join(e.path, "exploit")
 	if _, err := os.Stat(exploit_dir_name); os.IsNotExist(err) {
 		e.logger.Infof("Exploit dir not found for %s.", cfg.Name)
-		return ret
+		res_chan <- ret
+		return
 	}
 	docker_file_name := filepath.Join(exploit_dir_name, "Dockerfile")
 	if _, err := os.Stat(docker_file_name); os.IsNotExist(err) {
 		e.logger.Infof("Dockerfile not found in exploit dir of %s.", cfg.Name)
-		return ret
+		res_chan <- ret
+		return
 	}
 
 	// execute test
@@ -94,7 +99,8 @@ func (e Executer) check() TestResult {
 
 	if err = cmd.Start(); err != nil {
 		e.logger.Warnf("Failed to start test of '%s': %w", cfg.Name, err)
-		return TestFailure
+		res_chan <- TestFailure
+		return
 	}
 	e.logger.Infof("Test of '%s' started as pid: %d.", cfg.Name, cmd.Process.Pid)
 
@@ -104,12 +110,14 @@ func (e Executer) check() TestResult {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 				exit_code := status.ExitStatus()
 				e.logger.Infof("Test of '%s' failed with status %d.", cfg.Name, exit_code)
-				return TestFailure
+				res_chan <- TestFailure
+				return
 			}
 		}
 	}
 
 	// command ends without any failure
 	e.logger.Infof("'%s' ends with status code 0.", cfg.Name)
-	return TestSuccess
+	res_chan <- TestSuccess
+	return
 }

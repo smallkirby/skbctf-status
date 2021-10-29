@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestExecute(t *testing.T) {
+func TestBlockingExecute(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	slogger := logger.Sugar()
 
@@ -20,9 +20,11 @@ func TestExecute(t *testing.T) {
 
 	for _, f := range challs_dir {
 		if f.IsDir() {
+			res := make(chan TestResult, 1)
 			abspath, _ := filepath.Abs(filepath.Join("../examples", f.Name()))
 			executer := Executer{path: abspath, logger: *slogger}
-			result := executer.check()
+			executer.check(res)
+			result := <-res
 			slogger.Infof("Result: %v", result)
 			switch result {
 			case TestSuccess:
