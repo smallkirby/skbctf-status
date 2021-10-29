@@ -20,11 +20,11 @@ jobs:
           MYSQL_DATABSE: testname
           MYSQL_USER: testuser
           MYSQL_PASSWORD: testpass
-          options: >-
-            --health-cmd "mysqladmin ping"
-            --health-interval 10s
-            --healtth-timeout 5s
-            --health-retries 5
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
     - uses: actions/checkout@master
@@ -41,7 +41,8 @@ jobs:
       run: make all
 
     - name: setup mysql
-      run: mysql -u root -proot< setup.test.sql
+      run: |
+        mysql -u root -proot --protocol=tcp -h localhost -P 3306 < setup.test.sql
 
     - name: Run tests
       run: make test
