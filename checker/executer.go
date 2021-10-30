@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -137,6 +138,8 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 	e.logger.Infof("[%s] Test started as pid: %d.", chall.Name, cmd.Process.Pid)
 
 	res_chan_internal := make(chan error)
+	var errbuf bytes.Buffer
+	cmd.Stderr = &errbuf
 	go func() {
 		res_chan_internal <- cmd.Wait()
 	}()
@@ -149,6 +152,7 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 					exit_code := status.ExitStatus()
 					e.logger.Infof("[%s] Test failed with status %d.", chall.Name, exit_code)
+					e.logger.Info("%v", errbuf.String())
 					chall.Result = TestFailure
 					res_chan <- chall
 					return
