@@ -13,9 +13,7 @@ fmt:
 	find . -type f -name "*.go" | xargs -i $(GOCMD) fmt {}
 
 test:
-	sudo mysql < ./setup.test.sql
 	$(GOTEST) ./checker -v -count 1
-	sudo mysql < ./delete.test.sql
 
 bin:
 	mkdir -p $@
