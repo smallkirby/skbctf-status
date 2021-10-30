@@ -53,6 +53,38 @@ func (tr TestResult) String() string {
 	}
 }
 
+func (tr TestResult) ToMessage() string {
+	switch tr {
+	case TestSuccess, TestSuccessWithoutExecution:
+		return "Success"
+	case TestTimeout:
+		return "Timeout"
+	case TestNotExecuted:
+		return "test not executed"
+	case TestFailure:
+		return "Failure"
+	default:
+		return "UnknownFailure"
+	}
+}
+
+func (tr TestResult) ToColor() string {
+	switch tr {
+	case TestSuccess:
+		return "33FF99"
+	case TestSuccessWithoutExecution:
+		return "66FF66"
+	case TestTimeout:
+		return "6600CC"
+	case TestNotExecuted:
+		return "808080"
+	case TestFailure:
+		return "CC0000"
+	default:
+		return "202020"
+	}
+}
+
 func (e Executer) prepare_check(infofile string) (Challenge, error) {
 	ret := TestNotExecuted
 

@@ -1,23 +1,30 @@
 GOCMD=go
-GOTEST=$(GOCMD) test -v
+GOTEST=$(GOCMD) test -v -count 1
 GOVET=$(GOCMD) vet
 GOBUILD=$(GOCMD) build
+
+TARGETS = ./checker ./badge
 
 PREFLAGS += GOOS=linux GOARCH=amd64
 LDFLAGS = "-s"
 override CC := /usr/bin/gcc
 
-checker: bin
+all: checker badge
+
+checker: bin Makefile
+	$(PREFLAGS) $(GOBUILD) -ldflags $(LDFLAGS) -o bin/$@ ./$@
+
+badge: bin Makefile
 	$(PREFLAGS) $(GOBUILD) -ldflags $(LDFLAGS) -o bin/$@ ./$@
 
 fmt:
 	find . -type f -name "*.go" | xargs -i $(GOCMD) fmt {}
 
 lint:
-	$(GOVET) ./checker
+	$(GOVET) $(TARGETS)
 
 test:
-	$(GOTEST) ./checker -v -count 1
+	$(GOTEST) $(TARGETS)
 
 bin:
 	mkdir -p $@
@@ -25,6 +32,4 @@ bin:
 clean: bin
 	rm -rf ./bin/*
 
-all: checker
-
-.PHONY: fmt bin checker test clean all
+.PHONY: fmt bin test clean all checker badge
