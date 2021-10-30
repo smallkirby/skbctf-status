@@ -1,4 +1,4 @@
-package main
+package checker
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ type CheckerConfig struct {
 	Interval  int     `json:"interval"`
 }
 
-func read_conf(filename string) (CheckerConfig, error) {
+func ReadConf(filename string) (CheckerConfig, error) {
 	conf_file, err := os.Open(filename)
 	if err != nil {
 		return CheckerConfig{}, err

@@ -5,10 +5,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/smallkirby/skbctf-status/checker"
 	"go.uber.org/zap"
 )
 
-func create_conf(logger zap.SugaredLogger) CheckerConfig {
+func create_conf(logger zap.SugaredLogger) checker.CheckerConfig {
 	// commandline option overrides configuration from config file.
 	// priority of config is: command-line > config file > default
 	conffile := flag.String("config", "checker.conf.json", "Config file name of checker.")
@@ -22,7 +23,7 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 	flag.Parse()
 
 	// create default config
-	conf, err := read_conf(*conffile)
+	conf, err := checker.ReadConf(*conffile)
 	if err != nil {
 		logger.Infof("failed to read config file:\n%w", err)
 		logger.Info("Defaulting to default values...")
@@ -72,7 +73,7 @@ func main() {
 	conf := create_conf(*slogger)
 
 	for {
-		if err := CheckAllOnce(*slogger, conf); err != nil {
+		if err := checker.CheckAllOnce(*slogger, conf); err != nil {
 			slogger.Warnf("Fatal error detected:\n%v", err)
 		}
 
