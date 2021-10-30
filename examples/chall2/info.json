@@ -1,5 +1,5 @@
 {
   "name": "Example Failure Test",
   "id": 2,
-  "default": true
+  "default": false
 }

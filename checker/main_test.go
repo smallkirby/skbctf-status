@@ -22,11 +22,11 @@ func TestBlockingExecute(t *testing.T) {
 	}
 
 	for _, f := range challs_dir {
-		if f.IsDir() {
+		if f.IsDir() && f.Name() != "chall3" {
 			res := make(chan Challenge, 1)
 			abspath, _ := filepath.Abs(filepath.Join("../examples", f.Name()))
 			executer := Executer{path: abspath, logger: *slogger}
-			executer.check(res, "info.json")
+			executer.Check(res, "info.json")
 			chall := <-res
 			slogger.Infof("Result: %v", chall.result)
 
@@ -57,7 +57,7 @@ func TestBlockingAllCheck(t *testing.T) {
 	conf := CheckerConfig{
 		Single:    true,
 		Parallel:  false,
-		Timeout:   10.0,
+		Timeout:   3.0,
 		Infofile:  "info.json",
 		Nodb:      true,
 		ChallsDir: "../examples",
@@ -77,7 +77,7 @@ func TestAsyncAllCheck(t *testing.T) {
 	conf := CheckerConfig{
 		Single:    true,
 		Parallel:  true,
-		Timeout:   10.0,
+		Timeout:   3.0,
 		Infofile:  "info.json",
 		Nodb:      true,
 		ChallsDir: "../examples",
@@ -97,7 +97,7 @@ func TestRecordCheckAllOnce(t *testing.T) {
 	conf := CheckerConfig{
 		Single:    true,
 		Parallel:  false,
-		Timeout:   10.0,
+		Timeout:   3.0,
 		Infofile:  "info.json",
 		Nodb:      false,
 		ChallsDir: "../examples",
@@ -145,6 +145,14 @@ func TestRecordCheckAllOnce(t *testing.T) {
 		t.Errorf("Failed to fetch records: \n%v", err)
 	}
 	if result[0].ChallId != 2 || result[0].Result != TestFailure {
+		t.Errorf("Invalid record returned: %v", result[0])
+	}
+
+	result, err = FetchResult(db, 3, 1)
+	if err != nil {
+		t.Errorf("Failed to fetch records: \n%v", err)
+	}
+	if result[0].ChallId != 3 || result[0].Result != TestTimeout {
 		t.Errorf("Invalid record returned: %v", result[0])
 	}
 

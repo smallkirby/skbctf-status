@@ -65,7 +65,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		for len(challs_wait_que) > 0 {
 			chall := challs_wait_que[0]
 			challs_wait_que = challs_wait_que[1:]
-			go chall.check(ch, conf.Infofile)
+			go chall.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
 			challs_running_num += 1
 		}
 
@@ -89,7 +89,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		for _, challdir := range challs {
 			ch := make(chan Challenge, 1)
 			executer := Executer{path: challdir, logger: logger}
-			go executer.check(ch, conf.Infofile)
+			go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
 
 			chall := <-ch
 			if !conf.Nodb {
@@ -97,7 +97,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 					logger.Warn("%v", err)
 				}
 			}
-			logger.Infof("[%s] Test finish.", chall.Name)
+			logger.Infof("[%s] Test finish: %v", chall.Name, chall.result)
 		}
 	}
 

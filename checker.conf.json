@@ -1,9 +1,9 @@
 {
   "single": false,
   "parallel": false,
-  "timeout": 10.0,
+  "timeout": 5.0,
   "infofile": "info.json",
   "nodb": false,
   "challs": "examples",
-  "interval": 30
+  "interval": 10
 }
