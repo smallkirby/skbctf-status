@@ -6,7 +6,11 @@ import (
 )
 
 func TestBadgeUrl(t *testing.T) {
-	badger, err := NewBadger()
+	dbuser := "testuser"
+	dbpass := "testpass"
+	dbhost := "localhost"
+	dbname := "testname"
+	badger, err := NewBadger(dbuser, dbpass, dbhost, dbname)
 	if err != nil {
 		t.Errorf("%v", err)
 	}

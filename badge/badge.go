@@ -2,7 +2,6 @@ package badge
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -13,8 +12,8 @@ type Badger struct {
 	db *sqlx.DB
 }
 
-func NewBadger() (*Badger, error) {
-	if db, err := checker.Connect(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBHOST"), os.Getenv("DBNAME")); err != nil {
+func NewBadger(dbuser string, dbpass string, dbhost string, dbname string) (*Badger, error) {
+	if db, err := checker.Connect(dbuser, dbpass, dbhost, dbname); err != nil {
 		return nil, err
 	} else {
 		return &Badger{db: db}, nil
