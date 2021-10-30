@@ -75,7 +75,9 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 			challs_running_num -= 1
 			// record to DB
 			if !conf.Nodb {
-				RecordResult(db, result)
+				if err := RecordResult(db, result); err != nil {
+					logger.Warn("%v", err)
+				}
 			}
 			// end of tests
 			if challs_running_num <= 0 {
@@ -91,7 +93,9 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 
 			chall := <-ch
 			if !conf.Nodb {
-				RecordResult(db, chall)
+				if err := RecordResult(db, chall); err != nil {
+					logger.Warn("%v", err)
+				}
 			}
 			logger.Infof("[%s] Test finish.", chall.Name)
 		}
