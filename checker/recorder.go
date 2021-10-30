@@ -19,7 +19,7 @@ func (chall *Challenge) intoDbResult() DbResult {
 	return DbResult{
 		ChallId: chall.Id,
 		Name:    chall.Name,
-		Result:  chall.result,
+		Result:  chall.Result,
 	}
 }
 

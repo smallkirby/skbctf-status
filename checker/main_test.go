@@ -28,11 +28,11 @@ func TestBlockingExecute(t *testing.T) {
 			executer := Executer{path: abspath, logger: *slogger}
 			executer.Check(res, "info.json")
 			chall := <-res
-			slogger.Infof("Result: %v", chall.result)
+			slogger.Infof("Result: %v", chall.Result)
 
 			// tests which must fail
 			if f.Name() == "chall2" {
-				if chall.result != TestFailure {
+				if chall.Result != TestFailure {
 					t.Errorf("Test(%s) which must fail succeeded: %v", f.Name(), chall)
 				} else {
 					continue
@@ -40,7 +40,7 @@ func TestBlockingExecute(t *testing.T) {
 			}
 
 			// tests which must succeed
-			switch chall.result {
+			switch chall.Result {
 			case TestSuccess:
 			case TestSuccessWithoutExecution:
 				continue

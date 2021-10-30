@@ -23,7 +23,7 @@ type Challenge struct {
 	Id               int    `json:"id"`
 	Default_success  bool   `json:"default"`
 	Exploit_dir_name string
-	result           TestResult
+	Result           TestResult
 }
 
 type TestResult int
@@ -92,16 +92,16 @@ func (e Executer) prepare_check(infofile string) (Challenge, error) {
 	cfg_file_name := filepath.Join(e.path, infofile)
 	cfg_file, err := os.Open(cfg_file_name)
 	if err != nil {
-		return Challenge{result: ret}, fmt.Errorf("%s not found in %s.", infofile, e.path)
+		return Challenge{Result: ret}, fmt.Errorf("%s not found in %s.", infofile, e.path)
 	}
 	cfg_bytes, err := ioutil.ReadAll(cfg_file)
 	if err != nil {
-		return Challenge{result: ret}, fmt.Errorf("Failed to read config file %s.", cfg_file_name)
+		return Challenge{Result: ret}, fmt.Errorf("Failed to read config file %s.", cfg_file_name)
 	}
 
 	var chall Challenge
 	if err := json.Unmarshal(cfg_bytes, &chall); err != nil {
-		return Challenge{result: ret}, fmt.Errorf("Failed to parse %s as JSON:\n%v", cfg_file_name, err)
+		return Challenge{Result: ret}, fmt.Errorf("Failed to parse %s as JSON:\n%v", cfg_file_name, err)
 	}
 	if chall.Default_success {
 		ret = TestSuccessWithoutExecution
@@ -110,12 +110,12 @@ func (e Executer) prepare_check(infofile string) (Challenge, error) {
 	// check exploit path and Dockerfile
 	chall.Exploit_dir_name = filepath.Join(e.path, "exploit")
 	if _, err := os.Stat(chall.Exploit_dir_name); os.IsNotExist(err) {
-		chall.result = ret
+		chall.Result = ret
 		return chall, fmt.Errorf("[%s] Exploit dir not found.", chall.Name)
 	}
 	docker_file_name := filepath.Join(chall.Exploit_dir_name, "Dockerfile")
 	if _, err := os.Stat(docker_file_name); os.IsNotExist(err) {
-		chall.result = ret
+		chall.Result = ret
 		return chall, fmt.Errorf("[%s] Dockerfile not found in exploit dir.", chall.Name)
 	}
 
@@ -130,7 +130,7 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 
 	if err := cmd.Start(); err != nil {
 		e.logger.Warnf("[%s] Failed to start test: \n%w", chall.Name, err)
-		chall.result = TestFailure
+		chall.Result = TestFailure
 		res_chan <- chall
 		return
 	}
@@ -149,7 +149,7 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 					exit_code := status.ExitStatus()
 					e.logger.Infof("[%s] Test failed with status %d.", chall.Name, exit_code)
-					chall.result = TestFailure
+					chall.Result = TestFailure
 					res_chan <- chall
 					return
 				}
@@ -157,7 +157,7 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 		} else {
 			// command ends without any failure
 			e.logger.Infof("[%s] exits with status code 0.", chall.Name)
-			chall.result = TestSuccess
+			chall.Result = TestSuccess
 			res_chan <- chall
 		}
 	case <-kill_signal:
@@ -206,7 +206,7 @@ func (e Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, t
 		res_chan <- result
 		break
 	case <-time.After(time.Duration(timeout) * time.Second):
-		chall.result = TestTimeout
+		chall.Result = TestTimeout
 		signal_chan <- true
 		res_chan <- chall
 		break

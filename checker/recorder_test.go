@@ -16,7 +16,7 @@ func TestRecordFetchResult(t *testing.T) {
 		Name:            "Test Chall",
 		Id:              0,
 		Default_success: false,
-		result:          TestSuccess,
+		Result:          TestSuccess,
 	}
 
 	db, err := Connect(dbuser, dbpass, dbhost, dbname)

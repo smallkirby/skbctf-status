@@ -97,7 +97,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 					logger.Warn("%v", err)
 				}
 			}
-			logger.Infof("[%s] Test finish: %v", chall.Name, chall.result)
+			logger.Infof("[%s] Test finish: %v", chall.Name, chall.Result)
 		}
 	}
 
