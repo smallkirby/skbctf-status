@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/smallkirby/skbctf-status/checker"
+	"github.com/xeonx/timeago"
 )
 
 type Badger struct {
@@ -53,8 +54,8 @@ func (bd Badger) GetBadge(challid int) (string, error) {
 	result := results[0]
 
 	status := result.Result
-	message := status.ToMessage()
-	label := result.Name
+	label := status.ToMessage()
+	message := timeago.English.Format(result.Timestamp)
 	color := status.ToColor()
 	url := toShieldsUrl(label, message, color)
 
