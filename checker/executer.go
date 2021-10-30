@@ -111,13 +111,21 @@ func (e Executer) prepare_check(infofile string) (Challenge, error) {
 	// check exploit path and Dockerfile
 	chall.Exploit_dir_name = filepath.Join(e.path, "exploit")
 	if _, err := os.Stat(chall.Exploit_dir_name); os.IsNotExist(err) {
-		chall.Result = ret
-		return chall, fmt.Errorf("[%s] Exploit dir not found.", chall.Name)
+		// check whether this is symlink
+		realpath, err := os.Readlink(chall.Exploit_dir_name)
+		if err != nil {
+			chall.Result = ret
+			return chall, fmt.Errorf("[%s] Exploit dir not found. (failed to read symlink of dir)", chall.Name)
+		}
+		realpath = filepath.Join(e.path, realpath)
+		e.logger.Infof("symlink found: %s -> %s", chall.Exploit_dir_name, realpath)
+		chall.Exploit_dir_name = realpath
 	}
+
 	docker_file_name := filepath.Join(chall.Exploit_dir_name, "Dockerfile")
 	if _, err := os.Stat(docker_file_name); os.IsNotExist(err) {
 		chall.Result = ret
-		return chall, fmt.Errorf("[%s] Dockerfile not found in exploit dir.", chall.Name)
+		return chall, fmt.Errorf("[%s] Dockerfile not found in exploit dir: %s", chall.Name, chall.Exploit_dir_name)
 	}
 
 	return chall, nil
