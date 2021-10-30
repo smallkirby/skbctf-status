@@ -33,16 +33,13 @@ jobs:
       uses: actions/setup-go@v2
 
     - name: Apply linter
-      uses: golangci/golangci-lint-action@v2
-      with:
-        skip-go-installation: true
+      run: make lint
 
     - name: Build
       run: make all
 
     - name: setup mysql
-      run: |
-        mysql -u root -proot --protocol=tcp -h localhost -P 3306 < setup.test.sql
+      run: mysql -u root -proot --protocol=tcp -h localhost -P 3306 < setup.test.sql
 
     - name: Run tests
       run: make test

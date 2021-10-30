@@ -1,5 +1,6 @@
 GOCMD=go
 GOTEST=$(GOCMD) test -v
+GOVET=$(GOCMD) vet
 GOBUILD=$(GOCMD) build
 
 PREFLAGS += GOOS=linux GOARCH=amd64
@@ -11,6 +12,9 @@ checker: bin
 
 fmt:
 	find . -type f -name "*.go" | xargs -i $(GOCMD) fmt {}
+
+lint:
+	$(GOVET) ./checker
 
 test:
 	$(GOTEST) ./checker -v -count 1
