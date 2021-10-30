@@ -2,8 +2,10 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
+	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
@@ -26,7 +28,17 @@ func enumerateChallsDir(challs_dirname string) ([]string, error) {
 	return challs, nil
 }
 
-func CheckAll(logger zap.SugaredLogger, conf CheckerConfig) error {
+func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
+	// prepare DB
+	var db *sqlx.DB
+	var err error
+	if !conf.Nodb {
+		db, err = Connect(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBHOST"), os.Getenv("DBNAME"))
+		if err != nil {
+			return err
+		}
+	}
+
 	// enumerate challenge dirs
 	challs, err := enumerateChallsDir(conf.ChallsDir)
 	if err != nil {
@@ -63,7 +75,7 @@ func CheckAll(logger zap.SugaredLogger, conf CheckerConfig) error {
 			challs_running_num -= 1
 			// record to DB
 			if !conf.Nodb {
-				logger.Error("not imp")
+				RecordResult(db, result)
 			}
 			// end of tests
 			if challs_running_num <= 0 {
@@ -79,7 +91,7 @@ func CheckAll(logger zap.SugaredLogger, conf CheckerConfig) error {
 
 			chall := <-ch
 			if !conf.Nodb {
-				logger.Error("not imp")
+				RecordResult(db, chall)
 			}
 			logger.Infof("[%s] Test finish.", chall.Name)
 		}

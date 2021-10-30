@@ -10,11 +10,10 @@ type CheckerConfig struct {
 	Single    bool    `json:"single"`
 	Parallel  bool    `json:"parallel"`
 	Timeout   float64 `json:"timeout"`
-	Infofile  string  `json:"info.json"`
+	Infofile  string  `json:"infofile"`
 	Nodb      bool    `json:"nodb"`
 	ChallsDir string  `json:"challs"`
-	Db        string  `json:"db"`
-	DbUser    string  `json:"dbuser"`
+	Interval  int     `json:"interval"`
 }
 
 func read_conf(filename string) (CheckerConfig, error) {

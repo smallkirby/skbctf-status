@@ -1,1 +1,1 @@
-drop database testname;
+drop database if exists testname ;

@@ -2,3 +2,4 @@ bin
 supervisord.log
 supervisord.pid
 *.db
+.env

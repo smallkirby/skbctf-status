@@ -64,7 +64,7 @@ func (e Executer) check(res_chan chan<- Challenge, infofile string) {
 	}
 	cfg_bytes, err := ioutil.ReadAll(cfg_file)
 	if err != nil {
-		e.logger.Infof("Failed to read from %s.", cfg_file_name)
+		e.logger.Infof("Failed to read config file %s.", cfg_file_name)
 		res_chan <- Challenge{result: ret}
 		return
 	}

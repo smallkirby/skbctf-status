@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -18,8 +18,7 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 	infofile := flag.String("infofile", "info.json", "File name of configuration file for each challs.")
 	nodb := flag.Bool("nodb", false, "Not write to DB.")
 	challs_dir := flag.String("challs", "../examples", "Challenges directory path.")
-	db := flag.String("db", "example.db", "DB name.")
-	dbuser := flag.String("dbuser", "example", "DB User name.")
+	interval := flag.Int("interval", 30, "Testing interval in minutes.")
 	flag.Parse()
 
 	// create default config
@@ -35,8 +34,7 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 		conf.Timeout = *timeout
 		conf.Infofile = *infofile
 		conf.ChallsDir = *challs_dir
-		conf.Db = *db
-		conf.DbUser = *dbuser
+		conf.Interval = *interval
 	}
 
 	// Overwrite with command-line options
@@ -52,10 +50,8 @@ func create_conf(logger zap.SugaredLogger) CheckerConfig {
 			conf.Parallel = *parallel
 		case "challs":
 			conf.ChallsDir = *challs_dir
-		case "db":
-			conf.Db = *db
-		case "dbuser":
-			conf.DbUser = *dbuser
+		case "interval":
+			conf.Interval = *interval
 		case "config":
 			break
 		default:
@@ -74,5 +70,16 @@ func main() {
 	slogger := logger.Sugar()
 
 	conf := create_conf(*slogger)
-	fmt.Print(conf)
+
+	for {
+		if err := CheckAllOnce(*slogger, conf); err != nil {
+			slogger.Warnf("Fatal error detected:\n%v", err)
+		}
+
+		if conf.Single {
+			break
+		} else {
+			time.Sleep(time.Duration(conf.Interval) * time.Minute)
+		}
+	}
 }
