@@ -96,6 +96,12 @@ func main() {
 		return
 	})
 
+	// default error badge
+	server.GET("/badge/error", func(c *gin.Context) {
+		c.Header("Cache-Control", "max-age=60, public, immutable, must-revalidate")
+		c.Redirect(http.StatusFound, "https://img.shields.io/badge/error-status_fetching_fails-red")
+	})
+
 	// Run server
 	port := get_port()
 	port_str := fmt.Sprintf(":%v", port)
