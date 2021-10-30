@@ -151,7 +151,7 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 			if exiterr, ok := err.(*exec.ExitError); ok {
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 					exit_code := status.ExitStatus()
-					e.logger.Infof("[%s] Test failed with status %d.", chall.Name, exit_code)
+					e.logger.Infof("[%s] Test failed with status %d.\n%v", chall.Name, exit_code, err)
 					e.logger.Infof("%v", errbuf.String())
 					chall.Result = TestFailure
 					res_chan <- chall
