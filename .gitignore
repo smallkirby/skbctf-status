@@ -1,5 +1,16 @@
+# bins
 bin
-supervisord.log
-supervisord.pid
-*.db
+
+# by-products of supervisord
+*.log
+*.pid
+
+# logs
+logs
+
+# actual files
+setup.sql
+checker.config.json
+supervisord.conf
 .env
+

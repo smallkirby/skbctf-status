@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 type CheckerConfig struct {
@@ -17,6 +18,11 @@ type CheckerConfig struct {
 }
 
 func ReadConf(filename string) (CheckerConfig, error) {
+	if filepath.IsAbs(filename) {
+		cwd, _ := os.Getwd()
+		filename = filepath.Join(cwd, filename)
+	}
+
 	conf_file, err := os.Open(filename)
 	if err != nil {
 		return CheckerConfig{}, err

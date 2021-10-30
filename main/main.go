@@ -12,13 +12,13 @@ import (
 func create_conf(logger zap.SugaredLogger) checker.CheckerConfig {
 	// commandline option overrides configuration from config file.
 	// priority of config is: command-line > config file > default
-	conffile := flag.String("config", "checker.conf.json", "Config file name of checker.")
+	conffile := flag.String("config", "checker.example.conf.json", "Config file name of checker.")
 	timeout := flag.Float64("timeout", 10.0, "Timeout for solve checks.")
 	single := flag.Bool("single", false, "Execute test set only once and exit.")
 	parallel := flag.Bool("parallel", true, "Execute solve checks in parallel.")
 	infofile := flag.String("infofile", "info.json", "File name of configuration file for each challs.")
 	nodb := flag.Bool("nodb", false, "Not write to DB.")
-	challs_dir := flag.String("challs", "../examples", "Challenges directory path.")
+	challs_dir := flag.String("challs", "examples", "Challenges directory path.")
 	interval := flag.Int("interval", 30, "Testing interval in minutes.")
 	flag.Parse()
 
