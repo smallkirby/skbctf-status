@@ -201,6 +201,8 @@ func (e Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, t
 		return
 	}
 
+	e.logger.Infof("[%s] timeout set to %f.", chall.Name, timeout)
+
 	// execute test
 	res_chan_internal := make(chan Challenge)
 	signal_chan := make(chan bool)
