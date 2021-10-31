@@ -15,6 +15,7 @@ type CheckerConfig struct {
 	Nodb      bool    `json:"nodb"`
 	ChallsDir string  `json:"challs"`
 	Interval  int     `json:"interval"`
+	Retries   int     `json:"retries"`
 }
 
 func ReadConf(filename string) (CheckerConfig, error) {

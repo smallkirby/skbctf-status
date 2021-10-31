@@ -56,7 +56,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 
 		// init executer and push them into waiting que
 		for ix, challdir := range challs {
-			executer := Executer{path: challdir, logger: logger}
+			executer := Executer{path: challdir, logger: logger, retry_max: conf.Retries, try_current: 0}
 			challs_wait_que[ix] = executer
 		}
 
@@ -65,21 +65,23 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		for len(challs_wait_que) > 0 {
 			chall := challs_wait_que[0]
 			challs_wait_que = challs_wait_que[1:]
+			chall.try_current++
 			go chall.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
 			challs_running_num += 1
 		}
 
 		// wait and get results
 		for result := range ch {
-			logger.Infof("[%s] Test finish.", result.Name)
-			challs_running_num -= 1
+			logger.Infof("[%s] Test execution finish.", result.Name)
 			// record to DB
 			if !conf.Nodb {
 				if err := RecordResult(db, result); err != nil {
 					logger.Warn("%v", err)
 				}
 			}
+
 			// end of tests
+			challs_running_num -= 1
 			if challs_running_num <= 0 {
 				close(ch)
 			}
@@ -88,16 +90,26 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		// Sequential test execution
 		for _, challdir := range challs {
 			ch := make(chan Challenge, 1)
-			executer := Executer{path: challdir, logger: logger}
-			go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
+			executer := Executer{path: challdir, logger: logger, retry_max: conf.Retries, try_current: 0}
+			// repeat executions
+			for ; executer.try_current <= executer.retry_max; executer.try_current++ {
+				go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
+				chall := <-ch
+				if !conf.Nodb {
+					if err := RecordResult(db, chall); err != nil {
+						logger.Warn("%v", err)
+					}
+				}
+				logger.Infof("[%s] Test execution finish: %v", chall.Name, chall.Result)
 
-			chall := <-ch
-			if !conf.Nodb {
-				if err := RecordResult(db, chall); err != nil {
-					logger.Warn("%v", err)
+				// check whether it should retry
+				if chall.Result != TestTimeout && chall.Result != TestFailure {
+					break
+				} else if executer.retry_max-executer.try_current > 0 {
+					logger.Infof("[%s] Re-executing failing test... (rest: %d)", chall.Name, executer.retry_max-executer.try_current)
+					continue
 				}
 			}
-			logger.Infof("[%s] Test finish: %v", chall.Name, chall.Result)
 		}
 	}
 

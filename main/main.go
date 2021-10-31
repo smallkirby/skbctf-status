@@ -20,6 +20,7 @@ func create_conf(logger zap.SugaredLogger) checker.CheckerConfig {
 	nodb := flag.Bool("nodb", false, "Not write to DB.")
 	challs_dir := flag.String("challs", "examples", "Challenges directory path.")
 	interval := flag.Int("interval", 30, "Testing interval in minutes.")
+	retries := flag.Int("retry", 0, "Number of retries when a test fails.")
 	flag.Parse()
 
 	// create default config
@@ -36,6 +37,7 @@ func create_conf(logger zap.SugaredLogger) checker.CheckerConfig {
 		conf.Infofile = *infofile
 		conf.ChallsDir = *challs_dir
 		conf.Interval = *interval
+		conf.Retries = *retries
 	}
 
 	// Overwrite with command-line options
@@ -43,17 +45,26 @@ func create_conf(logger zap.SugaredLogger) checker.CheckerConfig {
 		switch f.Name {
 		case "nodb":
 			conf.Nodb = *nodb
+			break
 		case "timeout":
 			conf.Timeout = *timeout
+			break
 		case "single":
 			conf.Single = *single
+			break
 		case "parallel":
 			conf.Parallel = *parallel
+			break
 		case "challs":
 			conf.ChallsDir = *challs_dir
+			break
 		case "interval":
 			conf.Interval = *interval
+			break
 		case "config":
+			break
+		case "retry":
+			conf.Retries = *retries
 			break
 		default:
 			logger.Errorf("Unknown flag found: %s", f.Name)

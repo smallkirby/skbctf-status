@@ -15,8 +15,10 @@ import (
 )
 
 type Executer struct {
-	path   string
-	logger zap.SugaredLogger
+	path        string
+	logger      zap.SugaredLogger
+	retry_max   int
+	try_current int
 }
 
 type Challenge struct {

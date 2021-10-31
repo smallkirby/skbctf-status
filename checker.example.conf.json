@@ -1,9 +1,10 @@
 {
-  "single": false,
+  "single": true,
   "parallel": false,
-  "timeout": 10.0,
+  "timeout": 2.0,
   "infofile": "info.json",
-  "nodb": false,
+  "nodb": true,
   "challs": "examples",
-  "interval": 10
+  "interval": 10,
+  "retries": 3
 }
