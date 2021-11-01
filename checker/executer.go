@@ -88,7 +88,7 @@ func (tr TestResult) ToColor() string {
 	}
 }
 
-func (e Executer) prepare_check(infofile string) (Challenge, error) {
+func (e *Executer) prepare_check(infofile string) (Challenge, error) {
 	ret := TestNotExecuted
 
 	// read config file
@@ -133,7 +133,7 @@ func (e Executer) prepare_check(infofile string) (Challenge, error) {
 	return chall, nil
 }
 
-func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, kill_signal <-chan bool) {
+func (e *Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, kill_signal <-chan bool) {
 	// execute test
 	container_name := fmt.Sprintf("container_solver_%d", chall.Id)
 	image_name := fmt.Sprintf("solver_%d", chall.Id)
@@ -186,7 +186,11 @@ func (e Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, k
 	}
 }
 
-func (e Executer) Check(res_chan chan<- Challenge, infofile string) {
+/**
+	execute tests w/o timeout.
+	it retries execution for specified times if a test fails.
+**/
+func (e *Executer) Check(res_chan chan<- Challenge, infofile string) {
 	// read config file and check target directry structure
 	chall, err := e.prepare_check(infofile)
 	if err != nil {
@@ -196,13 +200,31 @@ func (e Executer) Check(res_chan chan<- Challenge, infofile string) {
 	}
 
 	// execute test
-	res_chan_internal := make(chan Challenge)
-	signal_chan := make(chan bool)
-	go e.execute_internal(res_chan_internal, chall, signal_chan)
-	res_chan <- <-res_chan_internal
+	for e.try_current <= e.retry_max {
+		res_chan_internal := make(chan Challenge)
+		signal_chan := make(chan bool)
+		go e.execute_internal(res_chan_internal, chall, signal_chan)
+		chall = <-res_chan_internal
+
+		// retry a test or return result
+		if chall.Result == TestSuccess || chall.Result == TestSuccessWithoutExecution {
+			break
+		}
+		if e.try_current < e.retry_max {
+			e.logger.Infof("[%s] Retrying test...", chall.Name)
+		}
+		e.try_current++
+
+	}
+
+	res_chan <- chall
 }
 
-func (e Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, timeout float64) {
+/**
+	execute tests with timeout.
+	it retries execution for specified times if a test fails.
+**/
+func (e *Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, timeout float64) {
 	// read config file and check target directry structure
 	chall, err := e.prepare_check(infofile)
 	if err != nil {
@@ -213,18 +235,32 @@ func (e Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, t
 
 	e.logger.Infof("[%s] timeout set to %f.", chall.Name, timeout)
 
-	// execute test
-	res_chan_internal := make(chan Challenge)
-	signal_chan := make(chan bool)
-	go e.execute_internal(res_chan_internal, chall, signal_chan)
-	select {
-	case result := <-res_chan_internal:
-		res_chan <- result
-		break
-	case <-time.After(time.Duration(timeout) * time.Second):
-		chall.Result = TestTimeout
-		signal_chan <- true
-		res_chan <- chall
-		break
+	// execute test some times
+	for e.try_current <= e.retry_max {
+		res_chan_internal := make(chan Challenge)
+		signal_chan := make(chan bool)
+		go e.execute_internal(res_chan_internal, chall, signal_chan)
+
+		// wait end of execution, or kill process for timeout.
+		select {
+		case result := <-res_chan_internal:
+			chall = result
+			break
+		case <-time.After(time.Duration(timeout) * time.Second):
+			signal_chan <- true
+			chall.Result = TestTimeout
+			break
+		}
+
+		// retry a test or return result
+		if chall.Result == TestSuccess || chall.Result == TestSuccessWithoutExecution {
+			break
+		}
+		if e.try_current < e.retry_max {
+			e.logger.Infof("[%s] Retrying test...", chall.Name)
+		}
+		e.try_current++
 	}
+
+	res_chan <- chall
 }

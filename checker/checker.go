@@ -50,30 +50,31 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 	// execute tests
 	if conf.Parallel {
 		// Parallel test execution
-		challs_wait_que := make([]Executer, len(challs))
-		challs_running_num := 0
+		executers_wait_que := make([]Executer, 0)
+		num_running := 0
 		ch := make(chan Challenge, len(challs))
 
 		// init executer and push them into waiting que
-		for ix, challdir := range challs {
+		for _, challdir := range challs {
 			executer := Executer{path: challdir, logger: logger, retry_max: conf.Retries, try_current: 0}
-			challs_wait_que[ix] = executer
+			executers_wait_que = append(executers_wait_que, executer)
 		}
 
 		// exec all
 		// XXX --asnyc-num option would specify # of running tests in a time
-		for len(challs_wait_que) > 0 {
-			chall := challs_wait_que[0]
-			challs_wait_que = challs_wait_que[1:]
-			chall.try_current++
-			go chall.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
-			challs_running_num += 1
+		for len(executers_wait_que) > 0 {
+			executer := executers_wait_que[0]
+			executers_wait_que = executers_wait_que[1:]
+			go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
+			num_running++
 		}
 
 		// wait and get results
 		for result := range ch {
 			logger.Infof("[%s] Test execution finish.", result.Name)
-			// record to DB
+			num_running--
+
+			// write result to DB
 			if !conf.Nodb {
 				if err := RecordResult(db, result); err != nil {
 					logger.Warn("%v", err)
@@ -81,8 +82,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 			}
 
 			// end of tests
-			challs_running_num -= 1
-			if challs_running_num <= 0 {
+			if num_running == 0 && len(executers_wait_que) == 0 {
 				close(ch)
 			}
 		}
@@ -91,25 +91,18 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		for _, challdir := range challs {
 			ch := make(chan Challenge, 1)
 			executer := Executer{path: challdir, logger: logger, retry_max: conf.Retries, try_current: 0}
-			// repeat executions
-			for ; executer.try_current <= executer.retry_max; executer.try_current++ {
-				go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
-				chall := <-ch
-				if !conf.Nodb {
-					if err := RecordResult(db, chall); err != nil {
-						logger.Warn("%v", err)
-					}
-				}
-				logger.Infof("[%s] Test execution finish: %v", chall.Name, chall.Result)
 
-				// check whether it should retry
-				if chall.Result != TestTimeout && chall.Result != TestFailure {
-					break
-				} else if executer.retry_max-executer.try_current > 0 {
-					logger.Infof("[%s] Re-executing failing test... (rest: %d)", chall.Name, executer.retry_max-executer.try_current)
-					continue
+			// blocking execution of test
+			go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
+			chall := <-ch
+
+			// write a result to DB
+			if !conf.Nodb {
+				if err := RecordResult(db, chall); err != nil {
+					logger.Warn("%v", err)
 				}
 			}
+			logger.Infof("[%s] Test execution finish: %v", chall.Name, chall.Result)
 		}
 	}
 
