@@ -1,5 +1,10 @@
 package checker
 
+/***
+* This file implements an actual executer of tests.
+* It doesn't record to DB.
+***/
+
 import (
 	"bytes"
 	"encoding/json"
@@ -14,6 +19,12 @@ import (
 	"go.uber.org/zap"
 )
 
+/***
+* Executer of test.
+* @path: path to challenge directory
+* @retry_max: maximum # of execution retry
+* @try_current: # of executed try
+***/
 type Executer struct {
 	path        string
 	logger      zap.SugaredLogger
@@ -21,6 +32,14 @@ type Executer struct {
 	try_current int
 }
 
+/***
+* Information of challenge.
+* Used to hold information to execute test.
+* @Name: challenge name
+* @Id: challenge ID
+* @Default_success: if test is not executed due to insufficient info, result becomes `Success` if this is true.
+* @Result: test result
+***/
 type Challenge struct {
 	Name             string `json:"name"`
 	Id               int    `json:"id"`
@@ -29,13 +48,21 @@ type Challenge struct {
 	Result           TestResult
 }
 
+/***
+* Test result.
+***/
 type TestResult int
 
 const (
+	// Test is successful
 	TestSuccess TestResult = iota
+	// Test is not executed due to insufficient info, but defaults to Success
 	TestSuccessWithoutExecution
+	// Test didn't end before timeout
 	TestTimeout
+	// Test is not executed due to insufficient info, and falls into Failure
 	TestNotExecuted
+	// Test is failure
 	TestFailure
 )
 
@@ -88,6 +115,9 @@ func (tr TestResult) ToColor() string {
 	}
 }
 
+/***
+* Check challenge directory and collect challenge information to check whether test can be executed.
+***/
 func (e *Executer) prepare_check(infofile string) (Challenge, error) {
 	ret := TestNotExecuted
 
@@ -133,6 +163,10 @@ func (e *Executer) prepare_check(infofile string) (Challenge, error) {
 	return chall, nil
 }
 
+/***
+* Do execute test and return result via `res_chan` channel.
+* This function receives channel for kill signal for timeout.
+***/
 func (e *Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, kill_signal <-chan bool) {
 	// execute test
 	container_name := fmt.Sprintf("container_solver_%d", chall.Id)
@@ -186,10 +220,10 @@ func (e *Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, 
 	}
 }
 
-/**
-	execute tests w/o timeout.
-	it retries execution for specified times if a test fails.
-**/
+/***
+*	execute tests w/o timeout.
+*	it retries execution for specified times if a test fails.
+***/
 func (e *Executer) Check(res_chan chan<- Challenge, infofile string) {
 	// read config file and check target directry structure
 	chall, err := e.prepare_check(infofile)
@@ -220,10 +254,10 @@ func (e *Executer) Check(res_chan chan<- Challenge, infofile string) {
 	res_chan <- chall
 }
 
-/**
-	execute tests with timeout.
-	it retries execution for specified times if a test fails.
-**/
+/***
+*	execute tests with timeout.
+*	it retries execution for specified times if a test fails.
+***/
 func (e *Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, timeout float64) {
 	// read config file and check target directry structure
 	chall, err := e.prepare_check(infofile)

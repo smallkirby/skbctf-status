@@ -1,5 +1,9 @@
 package checker
 
+/***
+* This file implements tests of recorder.
+***/
+
 import (
 	"fmt"
 	"testing"

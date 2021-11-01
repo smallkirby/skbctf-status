@@ -1,5 +1,9 @@
 package checker
 
+/***
+* This file implements helper functions of mysql database.
+***/
+
 import (
 	"fmt"
 	"time"
@@ -8,6 +12,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+/***
+* Data schema of test result table.
+* Note that this is different from `Challenge` structure, which also contains test result.
+***/
 type DbResult struct {
 	ChallId   int        `db:"challid"`
 	Name      string     `db:"name"`
@@ -15,6 +23,9 @@ type DbResult struct {
 	Timestamp time.Time  `db:"timestamp"`
 }
 
+/***
+* Converter from `Challenge` structure into `DBResult`.
+***/
 func (chall *Challenge) intoDbResult() DbResult {
 	return DbResult{
 		ChallId: chall.Id,
@@ -23,6 +34,9 @@ func (chall *Challenge) intoDbResult() DbResult {
 	}
 }
 
+/***
+* Connect to mysql server and returns instance.
+***/
 func Connect(dbuser string, dbpass string, dbhost string, dbname string) (*sqlx.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@(%s)/%s?parseTime=true&autocommit=0", dbuser, dbpass, dbhost, dbname)
 	db, err := sqlx.Connect("mysql", dsn)
@@ -32,6 +46,9 @@ func Connect(dbuser string, dbpass string, dbhost string, dbname string) (*sqlx.
 	return db, nil
 }
 
+/***
+* Write and commit test result.
+***/
 func RecordResult(db *sqlx.DB, chall Challenge) error {
 	tx := db.MustBegin()
 	dbresult := chall.intoDbResult()
@@ -48,6 +65,9 @@ func RecordResult(db *sqlx.DB, chall Challenge) error {
 	return nil
 }
 
+/***
+* Query test result from DB by challenge ID.
+***/
 func FetchResult(db *sqlx.DB, challid int, limit int) ([]DbResult, error) {
 	var results []DbResult
 

@@ -1,5 +1,13 @@
 package main
 
+/***
+* This file implements main function of checker.
+* Only functions of main is:
+* 	- parse command-line options.
+*		- read and parse config file.
+*		- run tests only once or endlessly.
+***/
+
 import (
 	"flag"
 	"log"

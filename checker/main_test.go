@@ -1,5 +1,9 @@
 package checker
 
+/***
+* This file implements tests of checker and executer.
+***/
+
 import (
 	"fmt"
 	"io/ioutil"

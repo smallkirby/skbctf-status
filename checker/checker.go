@@ -1,5 +1,14 @@
 package checker
 
+/***
+* This file implements checker of tests.
+* Checker manages test flow, including:
+* 	- enumerationg challenges
+* 	- init Executer and do execute tests
+*		- record test results into DB
+* Checker itself does tests only for once for each challs.
+**/
+
 import (
 	"io/ioutil"
 	"os"
@@ -9,6 +18,9 @@ import (
 	"go.uber.org/zap"
 )
 
+/***
+* Enumerate challenges from given challenges directory.
+***/
 func enumerateChallsDir(challs_dirname string) ([]string, error) {
 	// open challs directory
 	challs := make([]string, 0)
@@ -28,6 +40,10 @@ func enumerateChallsDir(challs_dirname string) ([]string, error) {
 	return challs, nil
 }
 
+/***
+* Do entire test process flow only once for all challenges.
+* Process flow means enumerating challs, executing tests, and write results on DB.
+***/
 func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 	// prepare DB
 	var db *sqlx.DB

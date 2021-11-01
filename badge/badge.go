@@ -1,5 +1,10 @@
 package badge
 
+/***
+* This file implements Badger structure.
+* `Badger` get test result from DB, and returns appropriate URL to generate a badge at shields.io.
+***/
+
 import (
 	"fmt"
 	"strings"

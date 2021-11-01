@@ -1,5 +1,10 @@
 package checker
 
+/***
+* This file defines fields of config for checker.
+* Also, it implements helper function of config.
+***/
+
 import (
 	"encoding/json"
 	"io/ioutil"

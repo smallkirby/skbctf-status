@@ -1,5 +1,10 @@
 package main
 
+/***
+* This file implements status server.
+* Status server uses `Badger` structure to collect test-result information.
+***/
+
 import (
 	"flag"
 	"fmt"
