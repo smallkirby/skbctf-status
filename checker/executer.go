@@ -42,9 +42,10 @@ type Executer struct {
 * @Result: test result
 ***/
 type Challenge struct {
-	Name             string `json:"name"`
-	Id               int    `json:"id"`
-	Default_success  bool   `json:"default"`
+	Name             string  `json:"name"`
+	Id               int     `json:"id"`
+	Default_success  bool    `json:"default"`
+	Timeout          float64 `json:"timeout"`
 	Exploit_dir_name string
 	Result           TestResult
 }
@@ -209,8 +210,9 @@ func (e *Executer) execute_internal(res_chan chan Challenge, chall Challenge, ki
 	// wait and get exit-status
 	select {
 	case <-signal_chan: // process terminated
-		e.logger.Info("Process terminated, cleaning docker container...")
+		e.logger.Info("Process terminated, cleaning up docker container...")
 		shutdown_hook()
+		os.Exit(0)
 	case _, ok := <-killer_chan: // timeout
 		if !ok {
 			shutdown_hook()
@@ -281,6 +283,11 @@ func (e *Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, 
 		e.logger.Infof("%v", err)
 		res_chan <- chall
 		return
+	}
+
+	// overwrite timeout if specified for this chall
+	if chall.Timeout > 0 {
+		timeout = chall.Timeout
 	}
 
 	e.logger.Infof("[%s] timeout set to %f.", chall.Name, timeout)

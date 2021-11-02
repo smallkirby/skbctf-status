@@ -1,5 +1,6 @@
 {
   "name": "Example Timeout test",
   "id": 3,
-  "default":false
+  "default":false,
+  "timeout": 2.0
 }
