@@ -167,19 +167,20 @@ func (e *Executer) prepare_check(infofile string) (Challenge, error) {
 * Do execute test and return result via `res_chan` channel.
 * This function receives channel for kill signal for timeout.
 ***/
-func (e *Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, kill_signal <-chan bool) {
-	// execute test
-	container_name := fmt.Sprintf("container_solver_%d", chall.Id)
+func (e *Executer) execute_internal(res_chan chan Challenge, chall Challenge, killer_chan <-chan bool) {
+	// prepare command
+	container_name := fmt.Sprintf("container_solver_%d_%d", chall.Id, time.Now().Unix())
 	image_name := fmt.Sprintf("solver_%d", chall.Id)
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run --name %s --rm $(docker build -qt solver_%s %s)", container_name, image_name, chall.Exploit_dir_name))
 
+	// execute test async
 	if err := cmd.Start(); err != nil {
 		e.logger.Warnf("[%s] Failed to start test: \n%w", chall.Name, err)
 		chall.Result = TestFailure
 		res_chan <- chall
 		return
 	}
-	e.logger.Infof("[%s] Test started as pid: %d.", chall.Name, cmd.Process.Pid)
+	e.logger.Infof("[%s] Test started as pid %d in %s.", chall.Name, cmd.Process.Pid, container_name)
 
 	res_chan_internal := make(chan error)
 	var errbuf bytes.Buffer
@@ -188,8 +189,25 @@ func (e *Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, 
 		res_chan_internal <- cmd.Wait()
 	}()
 
+	shutdown_hook := func() {
+		// remove container
+		if err := exec.Command("docker", "rm", "-f", container_name).Run(); err != nil {
+			e.logger.Warnf("Failed to remove container(%s):\n%v", container_name, err)
+		}
+		// kill process
+		if err := cmd.Process.Kill(); err != nil {
+			e.logger.Warnf("Failed to kill process: %v", err)
+		}
+		res_chan <- chall
+	}
+
 	// wait and get exit-status
 	select {
+	case _, ok := <-killer_chan:
+		if !ok {
+			shutdown_hook()
+		}
+		break
 	case err := <-res_chan_internal:
 		if err != nil {
 			if exiterr, ok := err.(*exec.ExitError); ok {
@@ -207,15 +225,6 @@ func (e *Executer) execute_internal(res_chan chan<- Challenge, chall Challenge, 
 			e.logger.Infof("[%s] exits with status code 0.", chall.Name)
 			chall.Result = TestSuccess
 			res_chan <- chall
-		}
-	case <-kill_signal:
-		// kill process
-		if err := cmd.Process.Kill(); err != nil {
-			e.logger.Warnf("Failed to kill timeouted process: %v", err)
-		}
-		// remove container
-		if err := exec.Command("docker", "rm", "-f", container_name).Run(); err != nil {
-			e.logger.Warnf("Failed to remove timeouted container(%s):\n%v", container_name, err)
 		}
 	}
 }
@@ -236,8 +245,8 @@ func (e *Executer) Check(res_chan chan<- Challenge, infofile string) {
 	// execute test
 	for e.try_current <= e.retry_max {
 		res_chan_internal := make(chan Challenge)
-		signal_chan := make(chan bool)
-		go e.execute_internal(res_chan_internal, chall, signal_chan)
+		killer_chan := make(chan bool)
+		go e.execute_internal(res_chan_internal, chall, killer_chan)
 		chall = <-res_chan_internal
 
 		// retry a test or return result
@@ -248,7 +257,6 @@ func (e *Executer) Check(res_chan chan<- Challenge, infofile string) {
 			e.logger.Infof("[%s] Retrying test...", chall.Name)
 		}
 		e.try_current++
-
 	}
 
 	res_chan <- chall
@@ -272,8 +280,8 @@ func (e *Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, 
 	// execute test some times
 	for e.try_current <= e.retry_max {
 		res_chan_internal := make(chan Challenge)
-		signal_chan := make(chan bool)
-		go e.execute_internal(res_chan_internal, chall, signal_chan)
+		killer_chan := make(chan bool)
+		go e.execute_internal(res_chan_internal, chall, killer_chan)
 
 		// wait end of execution, or kill process for timeout.
 		select {
@@ -281,7 +289,8 @@ func (e *Executer) CheckWithTimeout(res_chan chan<- Challenge, infofile string, 
 			chall = result
 			break
 		case <-time.After(time.Duration(timeout) * time.Second):
-			signal_chan <- true
+			close(killer_chan)
+			chall = <-res_chan_internal
 			chall.Result = TestTimeout
 			break
 		}

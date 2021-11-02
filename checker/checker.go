@@ -86,7 +86,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 
 		// wait and get results
 		for result := range ch {
-			logger.Infof("[%s] Test execution finish.", result.Name)
+			logger.Infof("[%s] Test execution finish with %v.", result.Name, result.Result)
 			num_running--
 
 			// pop from waiting queue and execute test
