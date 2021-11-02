@@ -1,6 +1,6 @@
 {
   "single": true,
-  "parallel": false,
+  "pnum": 2,
   "timeout": 2.0,
   "infofile": "info.json",
   "nodb": true,

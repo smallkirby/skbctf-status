@@ -79,12 +79,13 @@ func TestAsyncAllCheck(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	slogger := logger.Sugar()
 	conf := CheckerConfig{
-		Single:    true,
-		Parallel:  true,
-		Timeout:   3.0,
-		Infofile:  "info.json",
-		Nodb:      true,
-		ChallsDir: "../examples",
+		Single:      true,
+		Parallel:    true,
+		ParallelNum: 3,
+		Timeout:     3.0,
+		Infofile:    "info.json",
+		Nodb:        true,
+		ChallsDir:   "../examples",
 	}
 
 	start_time := time.Now().Unix()

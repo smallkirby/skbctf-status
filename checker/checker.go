@@ -77,8 +77,7 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		}
 
 		// exec all
-		// XXX --asnyc-num option would specify # of running tests in a time
-		for len(executers_wait_que) > 0 {
+		for conf.ParallelNum > uint(num_running) && len(executers_wait_que) > 0 {
 			executer := executers_wait_que[0]
 			executers_wait_que = executers_wait_que[1:]
 			go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
@@ -89,6 +88,14 @@ func CheckAllOnce(logger zap.SugaredLogger, conf CheckerConfig) error {
 		for result := range ch {
 			logger.Infof("[%s] Test execution finish.", result.Name)
 			num_running--
+
+			// pop from waiting queue and execute test
+			for conf.ParallelNum > uint(num_running) && len(executers_wait_que) > 0 {
+				executer := executers_wait_que[0]
+				executers_wait_que = executers_wait_que[1:]
+				go executer.CheckWithTimeout(ch, conf.Infofile, conf.Timeout)
+				num_running++
+			}
 
 			// write result to DB
 			if !conf.Nodb {

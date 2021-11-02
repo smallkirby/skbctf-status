@@ -28,8 +28,8 @@ import (
 type Executer struct {
 	path        string
 	logger      zap.SugaredLogger
-	retry_max   int
-	try_current int
+	retry_max   uint
+	try_current uint
 }
 
 /***

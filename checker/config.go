@@ -13,14 +13,33 @@ import (
 )
 
 type CheckerConfig struct {
-	Single    bool    `json:"single"`
-	Parallel  bool    `json:"parallel"`
-	Timeout   float64 `json:"timeout"`
-	Infofile  string  `json:"infofile"`
-	Nodb      bool    `json:"nodb"`
-	ChallsDir string  `json:"challs"`
-	Interval  int     `json:"interval"`
-	Retries   int     `json:"retries"`
+	Single      bool    `json:"single"`
+	Parallel    bool    `json:"parallel"`
+	ParallelNum uint    `json:"pnum"`
+	Timeout     float64 `json:"timeout"`
+	Infofile    string  `json:"infofile"`
+	Nodb        bool    `json:"nodb"`
+	ChallsDir   string  `json:"challs"`
+	Interval    uint    `json:"interval"`
+	Retries     uint    `json:"retries"`
+}
+
+func (ch *CheckerConfig) ResolveConflict() {
+	if ch.ParallelNum >= 1 {
+		ch.Parallel = true
+	}
+	if ch.Parallel && ch.ParallelNum <= 0 {
+		ch.ParallelNum = 1
+	}
+	if ch.Interval == 0 {
+		ch.Interval = 1
+	}
+}
+
+func (ch *CheckerConfig) Validate() {
+	if ch.Timeout < 0 {
+		ch.Timeout = 0
+	}
 }
 
 func ReadConf(filename string) (CheckerConfig, error) {
