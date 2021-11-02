@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -173,6 +174,10 @@ func (e *Executer) execute_internal(res_chan chan Challenge, chall Challenge, ki
 	image_name := fmt.Sprintf("solver_%d", chall.Id)
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run --name %s --rm $(docker build -qt solver_%s %s)", container_name, image_name, chall.Exploit_dir_name))
 
+	// termination signal hook
+	signal_chan := make(chan os.Signal, 1)
+	signal.Notify(signal_chan, os.Interrupt, syscall.SIGTERM)
+
 	// execute test async
 	if err := cmd.Start(); err != nil {
 		e.logger.Warnf("[%s] Failed to start test: \n%w", chall.Name, err)
@@ -203,12 +208,15 @@ func (e *Executer) execute_internal(res_chan chan Challenge, chall Challenge, ki
 
 	// wait and get exit-status
 	select {
-	case _, ok := <-killer_chan:
+	case <-signal_chan: // process terminated
+		e.logger.Info("Process terminated, cleaning docker container...")
+		shutdown_hook()
+	case _, ok := <-killer_chan: // timeout
 		if !ok {
 			shutdown_hook()
 		}
 		break
-	case err := <-res_chan_internal:
+	case err := <-res_chan_internal: // test execution end
 		if err != nil {
 			if exiterr, ok := err.(*exec.ExitError); ok {
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {

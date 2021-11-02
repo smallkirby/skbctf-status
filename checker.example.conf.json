@@ -1,7 +1,7 @@
 {
   "single": true,
   "pnum": 2,
-  "timeout": 2.0,
+  "timeout": 10.0,
   "infofile": "info.json",
   "nodb": true,
   "challs": "examples",
